@@ -1,25 +1,146 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Activity Monitoring"
+output: html_document
 ---
 
 
-## Loading and preprocessing the data
+
+## Read in Data
+
+```{r message=FALSE, echo=TRUE}
+Data <- read.csv("activity.csv")
+Data <- as.data.frame(Data)
+Data$date <- as.Date(Data$date)
+summary(Data)
+```
+
+
+## Steps Per Day
+
+The figure below shows a histogram of the number of steps per day.
+
+
+```{r message=FALSE, echo=TRUE}
+library(ggplot2)
+
+Steps <- aggregate(steps ~ date, Data, sum)
+
+ggplot(Steps, aes(x=steps)) + geom_histogram(binwidth=1000) +
+labs(x="Daily Steps", y="Frequency") + 
+labs(title="Histogram of Steps per day")
+
+```
+
+The median and mean number of steps per day are as follows:
+
+```{r message=FALSE, echo=TRUE}
+median(Steps$steps)
+```
+
+```{r message=FALSE, echo=TRUE}
+mean(Steps$steps)
+```
+
+## Average Daily Activity Pattern by Interval
+
+```{r message=FALSE, echo=TRUE}
+
+Steps_interval <- aggregate(steps ~ interval, Data, mean)
+
+ggplot(Steps_interval,aes(x = interval,y = steps)) +
+geom_line() +
+labs(x="Time Interval", y="Average Number of Steps") + 
+labs(title="Average Number of Steps in each five minute interval")
+
+```
+
+The interval containing the maximum number of steps is
+
+```{r message=FALSE, echo=TRUE}
+Steps_interval[(which.max(Steps_interval$steps)),]
+```
+
+835.
+
+## Missing Values
+
+To find the number of missing values, we calculate the following:
+
+```{r message=FALSE, echo=TRUE}
+sum(is.na(Data))
+```
+
+
+## Imputing Missing Values
+
+To impute the missing values, we use the mean value for the interval
+
+```{r message=FALSE, echo=TRUE}
+na_list <- is.na(Data$steps)
+Data_Imp <- Data
+
+Data_Imp$steps[na_list] <- Steps_interval$steps[Steps_interval$interval %in% Data_Imp$interval]
+
+```
+
+```{r message=FALSE, echo=TRUE}
+library(ggplot2)
+
+Steps_Imp <- aggregate(steps ~ date, Data_Imp, sum)
+
+ggplot(Steps_Imp, aes(x=steps)) + geom_histogram(binwidth=1000) +
+labs(x="Daily Steps", y="Frequency") + 
+labs(title="Histogram of Steps per day")
+
+```
+
+The median and mean number of steps per day are as follows:
+
+```{r message=FALSE, echo=TRUE}
+median(Steps_Imp$steps)
+```
+
+```{r message=FALSE, echo=TRUE}
+mean(Steps_Imp$steps)
+```
+
+Since our imputation scheme uses the mean number of steps in each interval, the mean and median number of steps per day is not significantly affected by the inclusion of imputed values.
+
+
+## Weekdays and Weekends
+
+```{r message=FALSE, echo=TRUE}
+
+## Function to determine if weekday or weekend
+is_weekday <- function(x) {
+  w <- weekdays(x)
+  if(w == "Saturday" | w == "Sunday")
+    {
+      out <- "WEEKEND"
+  }
+  else
+  {
+    out <- "WEEKDAY"
+  }
+  out
+}
+  
+Data_Imp$weekday <- sapply(Data_Imp$date,is_weekday)
+
+```
+
+
+```{r message=FALSE, echo=TRUE}
+
+Agg_Imp <- aggregate(steps ~ interval+weekday, Data_Imp, mean)
+
+ggplot(Agg_Imp, aes(x=interval, y=steps)) +
+  geom_line() +
+  facet_grid(weekday~.) + 
+labs(x="Time Interval", y="Average Number of Steps") + 
+labs(title="Average Number of Steps in each five minute interval")
+
+```
 
 
 
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
